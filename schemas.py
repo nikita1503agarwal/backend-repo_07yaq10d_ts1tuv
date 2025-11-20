@@ -6,43 +6,45 @@ These schemas are used for data validation in your application.
 
 Each Pydantic model represents a collection in your database.
 Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+- Project -> "project" collection
+- Chapter -> "chapter" collection
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Literal, Dict, Any
+from datetime import datetime
 
-# Example schemas (replace with your own):
+# Core domain schemas for ChapterSmith AI
 
-class User(BaseModel):
+POVMode = Literal["female", "male", "dual"]
+
+class Chapter(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Chapters collection schema
+    Collection name: "chapter"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    project_id: str = Field(..., description="Related project id as string")
+    number: int = Field(..., ge=1, description="Chapter number starting at 1")
+    title: str = Field("", description="Chapter title")
+    content: str = Field("", description="Full chapter text")
+    words: int = Field(0, ge=0, description="Word count of content")
+    pov: Literal["female", "male"] = Field("female", description="Resolved POV for this chapter")
+    status: Literal["pending", "draft", "final"] = Field("draft", description="Generation status")
+    meta: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata like prompts or notes")
 
-class Product(BaseModel):
+class Project(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Projects collection schema
+    Collection name: "project"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    name: str = Field(..., description="Project name")
+    outline: str = Field(..., description="User provided outline text")
+    chapter_count: int = Field(..., ge=3, le=6, description="Number of chapters 3-6")
+    pov_mode: POVMode = Field("female", description="female | male | dual")
+    default_pov: Literal["female", "male"] = Field("female", description="Default POV when not dual")
+    rules: List[str] = Field(default_factory=list, description="Writing rules applied")
+    tags: List[str] = Field(default_factory=list, description="Optional tags/genres")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+# Note: The Flames database viewer will automatically read these from GET /schema
